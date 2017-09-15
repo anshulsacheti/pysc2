@@ -43,13 +43,14 @@ from pysc2.lib import gfile
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
 import copy
+import json
 
 FLAGS = flags.FLAGS
 flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
 flags.DEFINE_integer("step_mul", 8, "How many game steps per observation.")
 flags.DEFINE_string("replays", None, "Path to a directory of replays.")
-flags.DEFINE_string("data_file", str(datetime.utcnow()) + ".json" , "Path to file storing state data")
-flags.DEFINE_integer("print_time", 1000 , "Interval between stat prints and data saves in seconds")
+flags.DEFINE_string("data_file", str(int(datetime.utcnow().timestamp())) + ".json" , "Path to file storing state data")
+flags.DEFINE_integer("print_time", 100, "Interval between stat prints and data saves in seconds")
 flags.mark_flag_as_required("replays")
 FLAGS(sys.argv)
 
@@ -269,7 +270,7 @@ class ReplayProcessor(multiprocessing.Process):
       self.stats.replay_stats.steps += 1
       self._update_stage("observe")
       obs = controller.observe()
-
+      state['actions'] = []
       for action in obs.actions:
         act_fl = action.action_feature_layer
         if act_fl.HasField("unit_command"):
@@ -331,6 +332,9 @@ def stats_printer(stats_queue):
     replay_stats = ReplayStats()
     for s in proc_stats:
       replay_stats.merge(s.replay_stats)
+
+    with open(FLAGS.data_file, 'w') as outfile:
+      json.dump(replay_stats.state_list, outfile)
 
     print((" Summary %0d secs " % (print_time - start_time)).center(width, "="))
     print(replay_stats)
