@@ -49,7 +49,9 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
 flags.DEFINE_integer("step_mul", 8, "How many game steps per observation.")
 flags.DEFINE_string("replays", None, "Path to a directory of replays.")
-flags.DEFINE_string("data_file", str(int(datetime.utcnow().timestamp())) + ".json" , "Path to file storing state data")
+flags.DEFINE_string("data_file",
+       "replay_state_data/" + str(int(datetime.utcnow().timestamp())) + ".json" ,
+       "Path to file storing state data")
 flags.DEFINE_integer("print_time", 100, "Interval between stat prints and data saves in seconds")
 flags.mark_flag_as_required("replays")
 FLAGS(sys.argv)
