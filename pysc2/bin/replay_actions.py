@@ -25,6 +25,7 @@ import signal
 import sys
 import threading
 import time
+from datetime import datetime
 
 from future.builtins import range  # pylint: disable=redefined-builtin
 import six
@@ -47,6 +48,8 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
 flags.DEFINE_integer("step_mul", 8, "How many game steps per observation.")
 flags.DEFINE_string("replays", None, "Path to a directory of replays.")
+flags.DEFINE_string("data_file", str(datetime.utcnow()) + ".json" , "Path to file storing state data")
+flags.DEFINE_integer("print_time", 1000 , "Interval between stat prints and data saves in seconds")
 flags.mark_flag_as_required("replays")
 FLAGS(sys.argv)
 
@@ -313,7 +316,7 @@ def stats_printer(stats_queue):
 
   running = True
   while running:
-    print_time += 10
+    print_time += FLAGS.print_time
 
     while time.time() < print_time:
       try:
