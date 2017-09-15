@@ -83,7 +83,8 @@ class SC2Env(environment.Base):
                replay_dir=None,
                game_steps_per_episode=None,
                score_index=None,
-               score_multiplier=None):
+               score_multiplier=None,
+               window_scaling=0.75):
     """Create a SC2 Env.
 
     Args:
@@ -115,6 +116,8 @@ class SC2Env(environment.Base):
           score_cumulative with 0 being the curriculum score. None means use
           the map default.
       score_multiplier: How much to multiply the score by. Useful for negating.
+      window_scaling: argument to allow custom window size scaling for camera
+          and feature layer window
 
     Raises:
       ValueError: if the agent_race, bot_race or difficulty are invalid.
@@ -162,6 +165,7 @@ class SC2Env(environment.Base):
 
     screen_size_px = point.Point(*screen_size_px)
     minimap_size_px = point.Point(*minimap_size_px)
+    self._window_scaling = window_scaling
     interface = sc_pb.InterfaceOptions(
         raw=visualize, score=True,
         feature_layer=sc_pb.SpatialCameraSetup(

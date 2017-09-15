@@ -41,11 +41,14 @@ import gflags as flags
 from pysc2.lib import gfile
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
+import copy
+
 FLAGS = flags.FLAGS
 flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
 flags.DEFINE_integer("step_mul", 8, "How many game steps per observation.")
 flags.DEFINE_string("replays", None, "Path to a directory of replays.")
 flags.mark_flag_as_required("replays")
+FLAGS(sys.argv)
 
 
 size = point.Point(16, 16)
@@ -60,6 +63,12 @@ def sorted_dict_str(d):
   return "{%s}" % ", ".join("%s: %s" % (k, d[k])
                             for k in sorted(d, key=d.get, reverse=True))
 
+def empty_state_dict():
+  return {"id":'',"map":'',"race":'',
+  "army":{},"buildings":{},"research":{},
+  "minerals":0,"gas":0,"supply":0,
+  "enemy_army":{},"enemy_buidlings":{},"enemy_race":'',
+  "actions":[],"step_count":0}
 
 class ReplayStats(object):
   """Summary stats of the replays seen so far."""
@@ -80,6 +89,7 @@ class ReplayStats(object):
     self.made_actions = collections.defaultdict(int)
     self.crashing_replays = set()
     self.invalid_replays = set()
+    self.state_list = []
 
   def merge(self, other):
     """Merge another ReplayStats into this one."""
@@ -102,11 +112,13 @@ class ReplayStats(object):
     merge_dict(self.made_actions, other.made_actions)
     self.crashing_replays |= other.crashing_replays
     self.invalid_replays |= other.invalid_replays
+    self.state_list += other.state_list
 
   def __str__(self):
     len_sorted_dict = lambda s: (len(s), sorted_dict_str(s))
     len_sorted_list = lambda s: (len(s), sorted(s))
     return "\n\n".join((
+        "States: %s" % (len(self.state_list)),
         "Replays: %s, Steps total: %s" % (self.replays, self.steps),
         "Camera move: %s, Select pt: %s, Select rect: %s, Control group: %s" % (
             self.camera_move, self.select_pt, self.select_rect,
@@ -237,6 +249,7 @@ class ReplayProcessor(multiprocessing.Process):
 
   def process_replay(self, controller, replay_data, map_data, player_id):
     """Process a single replay, updating the stats."""
+    state = empty_state_dict()
     self._update_stage("start_replay")
     controller.start_replay(sc_pb.RequestStartReplay(
         replay_data=replay_data,
@@ -273,6 +286,8 @@ class ReplayProcessor(multiprocessing.Process):
         except ValueError:
           func = -1
         self.stats.replay_stats.made_actions[func] += 1
+        state['actions'].append(func)
+        self.stats.replay_stats.state_list.append(copy.deepcopy(state))
 
       for valid in obs.observation.abilities:
         self.stats.replay_stats.valid_abilities[valid.ability_id] += 1
