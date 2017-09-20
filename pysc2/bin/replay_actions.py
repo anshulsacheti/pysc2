@@ -209,7 +209,7 @@ class ReplayProcessor(multiprocessing.Process):
               self._print("Empty queue, returning")
               return
             try:
-              replay_name = os.path.basename(replay_path)[:10]
+              replay_name = os.path.basename(replay_path)
               self.stats.replay = replay_name
               self._print("Got replay: %s" % replay_path)
               self._update_stage("open replay file")
@@ -220,6 +220,7 @@ class ReplayProcessor(multiprocessing.Process):
               self._print(info)
               self._print("-" * 60)
               if valid_replay(info, ping):
+                state = empty_state_dict()
                 self.stats.replay_stats.maps[info.map_name] += 1
                 for player_info in info.player_info:
                   self.stats.replay_stats.races[
@@ -231,8 +232,10 @@ class ReplayProcessor(multiprocessing.Process):
                 for player_id in [1, 2]:
                   self._print("Starting %s from player %s's perspective" % (
                       replay_name, player_id))
+                  state["id"] = replay_name + player_id
+                  state["race"] = sc_pb.Race.Name(info.player_info[player_id-1].player_info.race_actual)
                   self.process_replay(controller, replay_data, map_data,
-                                      player_id)
+                                      player_id, state)
               else:
                 self._print("Replay is invalid.")
                 self.stats.replay_stats.invalid_replays.add(replay_name)
@@ -253,9 +256,9 @@ class ReplayProcessor(multiprocessing.Process):
     self.stats.update(stage)
     self.stats_queue.put(self.stats)
 
-  def process_replay(self, controller, replay_data, map_data, player_id):
+  def process_replay(self, controller, replay_data, map_data, player_id, state):
     """Process a single replay, updating the stats."""
-    state = empty_state_dict()
+
     self._update_stage("start_replay")
     controller.start_replay(sc_pb.RequestStartReplay(
         replay_data=replay_data,
