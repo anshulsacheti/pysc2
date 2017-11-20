@@ -40,6 +40,7 @@ from pysc2.lib import remote_controller
 from pysc2.lib import app
 import gflags as flags
 from pysc2.lib import gfile
+from s2clientprotocol import common_pb2 as sc_common
 from s2clientprotocol import sc2api_pb2 as sc_pb
 
 import numpy as np
@@ -274,7 +275,7 @@ class ReplayProcessor(multiprocessing.Process):
                 self.stats.replay_stats.maps[info.map_name] += 1
                 for player_info in info.player_info:
                   self.stats.replay_stats.races[
-                      sc_pb.Race.Name(player_info.player_info.race_actual)] += 1
+                      sc_common.Race.Name(player_info.player_info.race_actual)] += 1
                 if info.player_info[0].player_result.result == 'Victory':
                   winner = 1
                 else:
@@ -287,12 +288,12 @@ class ReplayProcessor(multiprocessing.Process):
                 for player_id in [1, 2]:
                   self._print("Starting %s from player %s's perspective" % (
                       replay_name, player_id))
-                  race = sc_pb.Race.Name(info.player_info[player_id-1].player_info.race_actual)
+                  race = sc_common.Race.Name(info.player_info[player_id-1].player_info.race_actual)
                   if player_id == 1:
                     enemy = 2
                   else:
                     enemy = 1 
-                  enemy_race = sc_pb.Race.Name(info.player_info[enemy-1].player_info.race_actual)
+                  enemy_race = sc_common.Race.Name(info.player_info[enemy-1].player_info.race_actual)
                   self.process_replay(controller, replay_data, map_data,
                                       player_id, replay_name, info.map_name,
                                       winner,race,enemy_race)
