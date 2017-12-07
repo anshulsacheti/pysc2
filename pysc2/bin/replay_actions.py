@@ -248,7 +248,7 @@ class ReplayProcessor(multiprocessing.Process):
         observed_player_id=player_id))
 
   # New file before write to append to later
-    jsonFilePath = "replayDir/" + "player" + player_id + "_" + self.stats.replay + ".json"
+    jsonFilePath = "replayDir/" + "player" + str(player_id) + "_" + self.stats.replay + ".json"
     with open(jsonFilePath, 'w') as out:
         pass
 
