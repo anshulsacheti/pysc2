@@ -399,7 +399,7 @@ class ReplayProcessor(multiprocessing.Process):
       full_state = {"replay_id":replay_id, "map_name":map_name, "player_id":player_id, "extended_minimap":extended_minimap,
                     "friendly_army":friendly_army,"enemy_army":enemy_army,"all_feat_player":all_features['player'].tolist(),
                     "all_feat_avail_actions":all_features['available_actions'].tolist(),"actions":actions,"winner":winner,
-                    "race":race,"enemy_race":enemy_race, "all_features":all_features_withData}
+                    "race":race,"enemy_race":enemy_race, "all_features":all_feats_withData}
 
 
       #save state to disk, line delimited
