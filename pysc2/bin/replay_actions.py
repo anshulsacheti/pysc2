@@ -49,7 +49,7 @@ import json
 FLAGS = flags.FLAGS
 flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
 flags.DEFINE_integer("step_mul", 8, "How many game steps per observation.")
-flags.DEFINE_string("replays", None, "Path to a directory of replays.")
+flags.DEFINE_string("replays", None, "File containing paths of all replays")
 flags.DEFINE_integer("print_time", 100, "Interval between stat prints and data saves in seconds")
 flags.mark_flag_as_required("replays")
 FLAGS(sys.argv)
@@ -104,7 +104,7 @@ def update_minimap(minimap,screen):
     else:
         minimap[6,visible] = 0
     #Total HP + Shields
-    minimap[7,visible] = ((sum(screen[8,friendly_units]) + 
+    minimap[7,visible] = ((sum(screen[8,friendly_units]) +
                           sum(screen[10,friendly_units]))/total_visible)
     #enemy army
     enemy_units = screen[5] == 4
@@ -116,7 +116,7 @@ def update_minimap(minimap,screen):
     else:
         minimap[9,visible] = 0
     #Total HP + shields
-    minimap[10,visible] = ((sum(screen[8,enemy_units]) + 
+    minimap[10,visible] = ((sum(screen[8,enemy_units]) +
                             sum(screen[10,friendly_units]))/total_visible)
 
     return minimap
@@ -255,6 +255,7 @@ class ReplayProcessor(multiprocessing.Process):
           ping = controller.ping()
           for _ in range(300):
             try:
+              print(self.replay_queue.get())
               replay_path = self.replay_queue.get()
             except queue.Empty:
               self._update_stage("done")
@@ -292,7 +293,7 @@ class ReplayProcessor(multiprocessing.Process):
                   if player_id == 1:
                     enemy = 2
                   else:
-                    enemy = 1 
+                    enemy = 1
                   enemy_race = sc_common.Race.Name(info.player_info[enemy-1].player_info.race_actual)
                   self.process_replay(controller, replay_data, map_data,
                                       player_id, replay_name, info.map_name,
@@ -368,7 +369,7 @@ class ReplayProcessor(multiprocessing.Process):
 
         self.stats.replay_stats.made_actions[func] += 1
         actions.append([func,args])
-        
+
 
       for valid in obs.observation.abilities:
         self.stats.replay_stats.valid_abilities[valid.ability_id] += 1
@@ -394,7 +395,7 @@ class ReplayProcessor(multiprocessing.Process):
                     all_features['available_actions'].tolist(),actions,winner,
                     race,enemy_race]
 
-      
+
       #save state to disk, line delimited
       with open(save_file, 'a') as outfile:
         json.dump(full_state, outfile)
@@ -461,8 +462,10 @@ def main(unused_argv):
     # is work in the queue before the SC2 processes actually run, otherwise
     # The replay_queue.join below succeeds without doing any work, and exits.
     print("Getting replay list:", FLAGS.replays)
-    replay_list = sorted(run_config.replay_paths(FLAGS.replays))
-    print(len(replay_list), "replays found.\n")
+    replay_list = []
+    with open(FLAGS.replays,'r') as f:
+        for line in f:
+            replay_list.append(line.rstrip())
     replay_queue = multiprocessing.JoinableQueue(FLAGS.parallel * 10)
     replay_queue_thread = threading.Thread(target=replay_queue_filler,
                                            args=(replay_queue, replay_list))
