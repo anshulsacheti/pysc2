@@ -390,10 +390,16 @@ class ReplayProcessor(multiprocessing.Process):
       minimap[0:4,:,:] = minimap_data
       extended_minimap = update_minimap(minimap,screen).tolist()
       friendly_army, enemy_army = calc_armies(screen)
-      full_state = [replay_id, map_name, player_id, extended_minimap,
-                    friendly_army,enemy_army,all_features['player'].tolist(),
-                    all_features['available_actions'].tolist(),actions,winner,
-                    race,enemy_race]
+
+      all_feats_withData = {}
+      for key in all_features.keys():
+        if not(all_features[key].size==0):
+          all_feats_withData[key] = all_features[key].tolist()
+
+      full_state = {"replay_id":replay_id, "map_name":map_name, "player_id":player_id, "extended_minimap":extended_minimap,
+                    "friendly_army":friendly_army,"enemy_army":enemy_army,"all_feat_player":all_features['player'].tolist(),
+                    "all_feat_avail_actions":all_features['available_actions'].tolist(),"actions":actions,"winner":winner,
+                    "race":race,"enemy_race":enemy_race, "all_features":all_features_withData}
 
 
       #save state to disk, line delimited
